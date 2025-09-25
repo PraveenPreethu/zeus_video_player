@@ -70,6 +70,35 @@
   box-shadow: 0 20px 36px rgba(229, 57, 53, 0.28);
 }
 
+.cta[disabled] {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.secondary {
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: var(--zeus-dark);
+  border-radius: 999px;
+  padding: 12px 24px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.secondary:hover,
+.secondary:focus-visible {
+  border-color: rgba(229, 57, 53, 0.35);
+  color: var(--zeus-red);
+}
+
+.secondary[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .hero {
   background: white;
   border-radius: 24px;
@@ -287,6 +316,90 @@
   padding: 32px;
   position: relative;
   overflow: hidden;
+}
+
+.modal.upload {
+  width: min(520px, 100%);
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 48px 40px 40px;
+}
+
+.modal.upload .close-button {
+  background: rgba(229, 57, 53, 0.12);
+}
+
+.modal.upload .close-button:hover,
+.modal.upload .close-button:focus-visible {
+  background: rgba(229, 57, 53, 0.2);
+}
+
+.upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.upload-form h2 {
+  margin: 0;
+  color: var(--zeus-dark);
+  font-size: 1.4rem;
+}
+
+.upload-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--zeus-dark);
+}
+
+.upload-form input[type='text'],
+.upload-form textarea,
+.upload-form input[type='file'] {
+  font: inherit;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #fdfdfd;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.upload-form input[type='file'] {
+  padding: 10px 14px;
+}
+
+.upload-form input:focus-visible,
+.upload-form textarea:focus-visible {
+  border-color: rgba(229, 57, 53, 0.5);
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.15);
+  outline: none;
+}
+
+.upload-form textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.upload-form .file small {
+  font-weight: 400;
+  color: #6a6f7a;
+}
+
+.upload-form .error {
+  color: var(--zeus-red);
+  font-weight: 600;
+  margin: 0;
+}
+
+.upload-form .actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .close-button {
