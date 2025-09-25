@@ -1,0 +1,101 @@
+<div class="app-shell">
+  <header class="app-header">
+    <div class="branding">
+      <span class="logo">Z</span>
+      <div>
+        <h1>Zeus Video Library</h1>
+        <p>Streamlined access to every collection in one cinematic canvas.</p>
+      </div>
+    </div>
+    <button class="cta" type="button">Upload New Video</button>
+  </header>
+
+  <section class="hero">
+    <div>
+      <h2>{{ selectedFolder.name }}</h2>
+      <p>{{ selectedFolder.description }}</p>
+    </div>
+    <div class="hero-stats">
+      <span class="stat">{{ selectedFolder.videos.length }}</span>
+      <span class="stat-label">Videos</span>
+    </div>
+  </section>
+
+  <div class="layout">
+    <main class="video-grid" aria-live="polite">
+      <div class="cards" *ngIf="selectedFolder.videos.length; else emptyState">
+        <article
+          class="video-card"
+          *ngFor="let video of selectedFolder.videos"
+          (click)="openVideo(video)"
+          tabindex="0"
+          (keyup.enter)="openVideo(video)"
+        >
+          <div class="thumbnail">
+            <img [src]="video.thumbnail" [alt]="video.title + ' thumbnail'" loading="lazy" />
+            <span class="duration">{{ video.duration }}</span>
+          </div>
+          <div class="video-info">
+            <h3>{{ video.title }}</h3>
+            <p>{{ video.description }}</p>
+          </div>
+        </article>
+      </div>
+    </main>
+
+    <aside class="folder-menu" aria-label="Video collections">
+      <div class="menu-header">
+        <h3>Collections</h3>
+        <p>Select a folder to explore its videos.</p>
+      </div>
+      <ul>
+        <li *ngFor="let folder of folders" [class.active]="folder === selectedFolder">
+          <button type="button" (click)="selectFolder(folder)">
+            <span class="name">{{ folder.name }}</span>
+            <span class="count">{{ folder.videos.length }} videos</span>
+          </button>
+        </li>
+      </ul>
+    </aside>
+  </div>
+</div>
+
+<ng-template #emptyState>
+  <div class="empty-state">
+    <h3>No videos yet</h3>
+    <p>Upload your first video to start building this collection.</p>
+  </div>
+</ng-template>
+
+<div class="modal-backdrop" *ngIf="selectedVideo">
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="playerTitle">
+    <button class="close-button" type="button" (click)="closeVideo()" aria-label="Close video player">
+      <span aria-hidden="true">&times;</span>
+    </button>
+    <div class="player">
+      <video
+        *ngIf="selectedVideo"
+        controls
+        autoplay
+        [src]="selectedVideo.src"
+        [poster]="selectedVideo.thumbnail"
+      ></video>
+      <h2 id="playerTitle">{{ selectedVideo?.title }}</h2>
+      <p>{{ selectedVideo?.description }}</p>
+    </div>
+    <aside class="related" aria-label="More videos in this folder">
+      <h3>Up next</h3>
+      <ul>
+        <li *ngFor="let video of getRelatedVideos()">
+          <button type="button" (click)="openVideo(video)">
+            <img [src]="video.thumbnail" [alt]="video.title + ' thumbnail'" loading="lazy" />
+            <div>
+              <span class="title">{{ video.title }}</span>
+              <span class="duration">{{ video.duration }}</span>
+            </div>
+          </button>
+        </li>
+      </ul>
+    </aside>
+  </section>
+</div>

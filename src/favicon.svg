@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff5252" />
+      <stop offset="100%" stop-color="#d50000" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="#ffffff" />
+  <path
+    d="M46 14H24l-2 8h14l-18 20-2 8h28l2-8H32l18-20z"
+    fill="url(#accent)"
+  />
+</svg>
