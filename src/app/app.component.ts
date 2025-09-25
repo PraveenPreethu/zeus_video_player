@@ -28,6 +28,7 @@ interface UploadedVideoRecord {
   createdAt: string;
   thumbnail?: string;
   duration?: string;
+  storage?: 'azure' | 'local';
 }
 
 @Component({

@@ -1,5 +1,6 @@
 const http = require('node:http');
 const fs = require('node:fs');
+const fsp = fs.promises;
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 
@@ -67,6 +68,31 @@ async function uploadToAzureBlob(blobName, buffer, mimeType) {
   }
 
   return blobUrl;
+}
+
+async function saveToLocalStorage(fileName, buffer) {
+  const filePath = path.join(UPLOAD_DIR, fileName);
+  await fsp.writeFile(filePath, buffer);
+  return `/uploads/${fileName}`;
+}
+
+async function storeUploadedFile(fileName, buffer, mimeType) {
+  if (azureConfig) {
+    try {
+      const url = await uploadToAzureBlob(fileName, buffer, mimeType);
+      return { url, storage: 'azure' };
+    } catch (error) {
+      console.error('Failed to upload file to Azure Blob Storage. Falling back to local storage.', error);
+    }
+  }
+
+  try {
+    const url = await saveToLocalStorage(fileName, buffer);
+    return { url, storage: 'local' };
+  } catch (error) {
+    console.error('Failed to write uploaded file to local storage:', error);
+    return { error };
+  }
 }
 
 function ensureEnvironment() {
@@ -184,21 +210,27 @@ async function handleUpload(body) {
   const fileName = `${Date.now()}-${randomUUID()}${extension}`;
   const mime = resolveMimeType(extension, mimeType);
 
-  if (!azureConfig) {
-    console.error('Azure Blob Storage is not configured. Unable to upload file.');
+  let buffer;
+  try {
+    buffer = Buffer.from(data, 'base64');
+  } catch (error) {
     return {
       error: true,
-      status: 500,
-      message: 'File storage service is not configured.',
+      status: 400,
+      message: 'Invalid file data provided.',
     };
   }
 
-  let blobUrl;
-  try {
-    const buffer = Buffer.from(data, 'base64');
-    blobUrl = await uploadToAzureBlob(fileName, buffer, mime);
-  } catch (error) {
-    console.error('Failed to upload file to Azure Blob Storage:', error);
+  if (!buffer || buffer.length === 0) {
+    return {
+      error: true,
+      status: 400,
+      message: 'Uploaded file data is empty.',
+    };
+  }
+
+  const storageResult = await storeUploadedFile(fileName, buffer, mime);
+  if (!storageResult.url) {
     return {
       error: true,
       status: 502,
@@ -214,7 +246,8 @@ async function handleUpload(body) {
     folder: folder || 'Unsorted',
     originalName,
     fileName,
-    url: blobUrl,
+    url: storageResult.url,
+    storage: storageResult.storage,
     createdAt: new Date().toISOString(),
   };
 
