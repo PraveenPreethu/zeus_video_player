@@ -37,8 +37,9 @@ interface UploadedVideoRecord {
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
+
 export class AppComponent implements OnInit {
-  private readonly apiBaseUrl = 'http://localhost:3000/api/videos';
+  private readonly apiEndpoint = '/api/videos';
   private readonly fallbackThumbnail = 'assets/upload-placeholder.svg';
 
   readonly folders: Folder[] = [
@@ -66,60 +67,7 @@ export class AppComponent implements OnInit {
         },
         {
           id: 'action-3',
-          title: 'Summit Rescue',
-          description: 'Elite climbers attempt a daring rescue on the world’s highest peaks.',
-          thumbnail:
-            'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=900&q=80',
-          duration: '5:02',
-          src: 'https://samplelib.com/lib/preview/mp4/sample-15s.mp4',
-        },
-      ],
-    },
-    {
-      name: 'Documentaries',
-      description: 'Inspiring stories and immersive documentaries from around the globe.',
-      videos: [
-        {
-          id: 'doc-1',
-          title: 'Ocean Guardians',
-          description: 'Marine biologists uncover hidden wonders while protecting coral reefs.',
-          thumbnail:
-            'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80',
-          duration: '8:45',
-          src: 'https://samplelib.com/lib/preview/mp4/sample-20s.mp4',
-        },
-        {
-          id: 'doc-2',
-          title: 'Voices of the Wild',
-          description: 'Listen to the heartbeats of the rainforest through local storytellers.',
-          thumbnail:
-            'https://images.unsplash.com/photo-1470246973918-29a93221c455?auto=format&fit=crop&w=900&q=80',
-          duration: '9:12',
-          src: 'https://samplelib.com/lib/preview/mp4/sample-30s.mp4',
-        },
-        {
-          id: 'doc-3',
-          title: 'Cities Reborn',
-          description: 'A behind-the-scenes look at sustainable architecture shaping megacities.',
-          thumbnail:
-            'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80',
-          duration: '7:26',
-          src: 'https://samplelib.com/lib/preview/mp4/sample-12s.mp4',
-        },
-      ],
-    },
-    {
-      name: 'Lifestyle & Travel',
-      description: 'Slow down with curated travelogues, culinary tours, and mindful living.',
-      videos: [
-        {
-          id: 'life-1',
-          title: 'Coastal Retreats',
-          description: 'Discover serene hideaways along Mediterranean coastlines.',
-          thumbnail:
-            'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80',
-          duration: '6:05',
-          src: 'https://samplelib.com/lib/preview/mp4/sample-5mb.mp4',
+@@ -106,47 +123,215 @@ export class AppComponent {
         },
         {
           id: 'life-2',
@@ -226,7 +174,7 @@ export class AppComponent implements OnInit {
         data: base64,
       };
 
-      const response = await firstValueFrom(this.http.post<UploadedVideoRecord>(this.apiBaseUrl, payload));
+      const response = await firstValueFrom(this.http.post<UploadedVideoRecord>(this.apiEndpoint, payload));
       if (!response) {
         throw new Error('No response received from server.');
       }
@@ -237,6 +185,12 @@ export class AppComponent implements OnInit {
     } catch (error) {
       console.error('Upload failed:', error);
       if (error instanceof HttpErrorResponse) {
+        if (error.status === 0) {
+          this.uploadError =
+            'Unable to reach the upload service. Make sure it is running locally with "npm run server".';
+          return;
+        }
+
         const serverMessage =
           typeof error.error === 'object' && error.error?.message
             ? String(error.error.message)
@@ -275,7 +229,7 @@ export class AppComponent implements OnInit {
   }
 
   private loadUploadedVideos(): void {
-    this.http.get<UploadedVideoRecord[]>(this.apiBaseUrl).subscribe({
+    this.http.get<UploadedVideoRecord[]>(this.apiEndpoint).subscribe({
       next: (videos) => {
         videos.forEach((record) => this.addUploadedVideo(record));
       },
@@ -304,8 +258,22 @@ export class AppComponent implements OnInit {
       description: record.description,
       thumbnail: record.thumbnail ?? this.fallbackThumbnail,
       duration: record.duration ?? '0:00',
-      src: record.url.startsWith('http') ? record.url : `http://localhost:3000${record.url}`,
+      src: this.resolveMediaUrl(record.url),
     };
+  }
+
+  private resolveMediaUrl(url: string): string {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+
+    const normalized = url.startsWith('/') ? url : `/${url}`;
+
+    if (typeof window === 'undefined') {
+      return normalized;
+    }
+
+    return `${window.location.origin}${normalized}`;
   }
 
   private resetUploadForm(): void {
