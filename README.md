@@ -8,14 +8,19 @@ A single-page Angular experience that showcases a curated video library in a cri
    ```bash
    npm install
    ```
-2. Launch the development server
+2. Start the local upload API (saves videos under `server/uploads/`)
+   ```bash
+   npm run server
+   ```
+3. Launch the Angular development server (proxies API + uploads to the local backend) in a separate terminal
    ```bash
    npm start
    ```
-3. Open [http://localhost:4200](http://localhost:4200) in your browser.
+4. Open [http://localhost:4200](http://localhost:4200) in your browser.
 
 ## Available scripts
 
+- `npm run server` – Starts the lightweight Node API for file uploads.
 - `npm start` – Serves the application with live reload.
 - `npm run build` – Produces a production build in `dist/`.
 - `npm test` – Executes unit tests with Karma + Jasmine.
@@ -33,6 +38,10 @@ src/
 ├── index.html               # Application shell
 ├── main.ts                  # Bootstraps the Angular app
 └── styles.scss              # Global styles and design tokens
+server/
+├── index.js                 # Lightweight Node upload API
+├── uploads/                 # Video files saved through the UI
+└── videos.json              # Metadata store for uploaded videos
 ```
 
 ## Video sources & images

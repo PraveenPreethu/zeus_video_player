@@ -7,7 +7,7 @@
         <p>Streamlined access to every collection in one cinematic canvas.</p>
       </div>
     </div>
-    <button class="cta" type="button">Upload New Video</button>
+    <button class="cta" type="button" (click)="openUploadModal()">Upload New Video</button>
   </header>
 
   <section class="hero">
@@ -66,6 +66,64 @@
     <p>Upload your first video to start building this collection.</p>
   </div>
 </ng-template>
+
+<div class="modal-backdrop" *ngIf="showUploadModal">
+  <section class="modal upload" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
+    <button
+      class="close-button"
+      type="button"
+      (click)="closeUploadModal()"
+      [attr.aria-disabled]="uploadInProgress"
+      [disabled]="uploadInProgress"
+      aria-label="Close upload form"
+    >
+      <span aria-hidden="true">&times;</span>
+    </button>
+
+    <form class="upload-form" (ngSubmit)="submitUpload()" novalidate>
+      <h2 id="uploadTitle">Upload a new video</h2>
+
+      <label>
+        <span>Title</span>
+        <input
+          type="text"
+          name="title"
+          required
+          [(ngModel)]="uploadTitle"
+          [disabled]="uploadInProgress"
+        />
+      </label>
+
+      <label>
+        <span>Description</span>
+        <textarea
+          name="description"
+          rows="4"
+          required
+          [(ngModel)]="uploadDescription"
+          [disabled]="uploadInProgress"
+        ></textarea>
+      </label>
+
+      <label class="file">
+        <span>Video file</span>
+        <input type="file" accept="video/*" (change)="handleFileSelection($event)" [disabled]="uploadInProgress" />
+        <small *ngIf="uploadFile">Selected file: {{ uploadFile.name }}</small>
+      </label>
+
+      <p class="error" *ngIf="uploadError" aria-live="assertive">{{ uploadError }}</p>
+
+      <div class="actions">
+        <button type="submit" class="cta" [disabled]="uploadInProgress">
+          {{ uploadInProgress ? 'Uploading…' : 'Upload Video' }}
+        </button>
+        <button type="button" class="secondary" (click)="closeUploadModal()" [disabled]="uploadInProgress">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </section>
+</div>
 
 <div class="modal-backdrop" *ngIf="selectedVideo">
   <section class="modal" role="dialog" aria-modal="true" aria-labelledby="playerTitle">

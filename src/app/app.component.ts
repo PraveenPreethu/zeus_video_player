@@ -1,5 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { HttpClient, HttpClientModule, HttpErrorResponse } from '@angular/common/http';
+import { Component, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 
 interface VideoItem {
   id: string;
@@ -16,14 +19,28 @@ interface Folder {
   videos: VideoItem[];
 }
 
+interface UploadedVideoRecord {
+  id: string;
+  title: string;
+  description: string;
+  folder: string;
+  url: string;
+  createdAt: string;
+  thumbnail?: string;
+  duration?: string;
+}
+
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule, HttpClientModule],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
+  styleUrls: ['./app.component.scss'],
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+  private readonly apiEndpoint = '/api/videos';
+  private readonly fallbackThumbnail = 'assets/upload-placeholder.svg';
+
   readonly folders: Folder[] = [
     {
       name: 'Action Highlights',
@@ -128,6 +145,18 @@ export class AppComponent {
 
   selectedFolder: Folder = this.folders[0];
   selectedVideo: VideoItem | null = null;
+  showUploadModal = false;
+  uploadTitle = '';
+  uploadDescription = '';
+  uploadFile: File | null = null;
+  uploadError = '';
+  uploadInProgress = false;
+
+  constructor(private readonly http: HttpClient) {}
+
+  ngOnInit(): void {
+    this.loadUploadedVideos();
+  }
 
   selectFolder(folder: Folder): void {
     this.selectedFolder = folder;
@@ -148,5 +177,161 @@ export class AppComponent {
     }
 
     return this.selectedFolder.videos.filter((video) => video.id !== this.selectedVideo?.id);
+  }
+
+  openUploadModal(): void {
+    this.resetUploadForm();
+    this.showUploadModal = true;
+  }
+
+  closeUploadModal(): void {
+    if (this.uploadInProgress) {
+      return;
+    }
+
+    this.resetUploadForm();
+    this.showUploadModal = false;
+  }
+
+  handleFileSelection(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const fileList = input.files;
+    this.uploadFile = fileList && fileList.length > 0 ? fileList.item(0) : null;
+    if (this.uploadFile) {
+      this.uploadError = '';
+    }
+  }
+
+  async submitUpload(): Promise<void> {
+    if (this.uploadInProgress) {
+      return;
+    }
+
+    this.uploadError = '';
+
+    if (!this.uploadTitle.trim() || !this.uploadDescription.trim() || !this.uploadFile) {
+      this.uploadError = 'Title, description, and video file are required.';
+      return;
+    }
+
+    this.uploadInProgress = true;
+
+    try {
+      const base64 = await this.fileToBase64(this.uploadFile);
+      const payload = {
+        title: this.uploadTitle.trim(),
+        description: this.uploadDescription.trim(),
+        originalName: this.uploadFile.name,
+        folder: this.selectedFolder.name,
+        data: base64,
+      };
+
+      const response = await firstValueFrom(this.http.post<UploadedVideoRecord>(this.apiEndpoint, payload));
+      if (!response) {
+        throw new Error('No response received from server.');
+      }
+
+      this.addUploadedVideo(response);
+      this.resetUploadForm();
+      this.showUploadModal = false;
+    } catch (error) {
+      console.error('Upload failed:', error);
+      if (error instanceof HttpErrorResponse) {
+        if (error.status === 0) {
+          this.uploadError =
+            'Unable to reach the upload service. Make sure it is running locally with "npm run server".';
+          return;
+        }
+
+        const serverMessage =
+          typeof error.error === 'object' && error.error?.message
+            ? String(error.error.message)
+            : error.message;
+        this.uploadError = serverMessage || 'Unable to upload video. Please try again later.';
+      } else if (error instanceof Error) {
+        this.uploadError = error.message;
+      } else {
+        this.uploadError = 'Unable to upload video. Please try again later.';
+      }
+    } finally {
+      this.uploadInProgress = false;
+    }
+  }
+
+  private async fileToBase64(file: File): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        if (typeof result === 'string') {
+          const [, base64] = result.split(',');
+          if (base64) {
+            resolve(base64);
+            return;
+          }
+        }
+
+        reject(new Error('Failed to read the selected file.'));
+      };
+      reader.onerror = () => {
+        reject(new Error('Unable to read the selected file.'));
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  private loadUploadedVideos(): void {
+    this.http.get<UploadedVideoRecord[]>(this.apiEndpoint).subscribe({
+      next: (videos) => {
+        videos.forEach((record) => this.addUploadedVideo(record));
+      },
+      error: (error) => {
+        console.warn('Unable to load uploaded videos:', error);
+      },
+    });
+  }
+
+  private addUploadedVideo(record: UploadedVideoRecord): void {
+    const folder = this.folders.find((item) => item.name === record.folder) ?? this.selectedFolder;
+    const video: VideoItem = this.mapRecordToVideo(record);
+    const existingIndex = folder.videos.findIndex((item) => item.id === video.id);
+
+    if (existingIndex >= 0) {
+      folder.videos.splice(existingIndex, 1, video);
+    } else {
+      folder.videos = [video, ...folder.videos];
+    }
+  }
+
+  private mapRecordToVideo(record: UploadedVideoRecord): VideoItem {
+    return {
+      id: record.id,
+      title: record.title,
+      description: record.description,
+      thumbnail: record.thumbnail ?? this.fallbackThumbnail,
+      duration: record.duration ?? '0:00',
+      src: this.resolveMediaUrl(record.url),
+    };
+  }
+
+  private resolveMediaUrl(url: string): string {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+
+    const normalized = url.startsWith('/') ? url : `/${url}`;
+
+    if (typeof window === 'undefined') {
+      return normalized;
+    }
+
+    return `${window.location.origin}${normalized}`;
+  }
+
+  private resetUploadForm(): void {
+    this.uploadTitle = '';
+    this.uploadDescription = '';
+    this.uploadFile = null;
+    this.uploadError = '';
   }
 }
