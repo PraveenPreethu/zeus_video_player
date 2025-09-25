@@ -176,6 +176,7 @@ export class AppComponent implements OnInit {
         description: this.uploadDescription.trim(),
         originalName: this.uploadFile.name,
         folder: this.selectedFolder.name,
+        mimeType: this.uploadFile.type,
         data: base64,
       };
 
