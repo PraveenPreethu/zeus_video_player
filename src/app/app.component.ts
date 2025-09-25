@@ -39,7 +39,7 @@ interface UploadedVideoRecord {
 })
 
 export class AppComponent implements OnInit {
-  private readonly apiEndpoint = '/api/videos';
+  private apiEndpoint = '/api/videos';
   private readonly fallbackThumbnail = 'assets/upload-placeholder.svg';
 
   readonly folders: Folder[] = [
@@ -108,6 +108,10 @@ export class AppComponent implements OnInit {
   constructor(private readonly http: HttpClient) {}
 
   ngOnInit(): void {
+    if (typeof window !== 'undefined') {
+      this.apiEndpoint = this.resolveApiEndpoint();
+    }
+
     this.loadUploadedVideos();
   }
 
@@ -179,7 +183,8 @@ export class AppComponent implements OnInit {
         data: base64,
       };
 
-      const response = await firstValueFrom(this.http.post<UploadedVideoRecord>(this.apiEndpoint, payload));
+      const endpoint = this.getApiEndpoint();
+      const response = await firstValueFrom(this.http.post<UploadedVideoRecord>(endpoint, payload));
       if (!response) {
         throw new Error('No response received from server.');
       }
@@ -234,7 +239,8 @@ export class AppComponent implements OnInit {
   }
 
   private loadUploadedVideos(): void {
-    this.http.get<UploadedVideoRecord[]>(this.apiEndpoint).subscribe({
+    const endpoint = this.getApiEndpoint();
+    this.http.get<UploadedVideoRecord[]>(endpoint).subscribe({
       next: (videos) => {
         videos.forEach((record) => this.addUploadedVideo(record));
       },
@@ -279,6 +285,77 @@ export class AppComponent implements OnInit {
     }
 
     return `${window.location.origin}${normalized}`;
+  }
+
+  private resolveApiEndpoint(): string {
+    if (typeof window === 'undefined') {
+      return '/api/videos';
+    }
+
+    const configured = this.readConfiguredApiEndpoint();
+    if (configured) {
+      return configured;
+    }
+
+    const host = window.location.hostname;
+    return this.isLocalHost(host) ? '/api/videos' : '/.netlify/functions/videos';
+  }
+
+  private getApiEndpoint(): string {
+    if (typeof window === 'undefined') {
+      return this.apiEndpoint;
+    }
+
+    if (
+      !this.apiEndpoint ||
+      (this.apiEndpoint === '/api/videos' && !this.isLocalHost(window.location.hostname))
+    ) {
+      this.apiEndpoint = this.resolveApiEndpoint();
+    }
+
+    return this.apiEndpoint;
+  }
+
+  private isLocalHost(host: string): boolean {
+    return ['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(host) || host.endsWith('.local');
+  }
+
+  private readConfiguredApiEndpoint(): string | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    const globalConfig = (window as Window & { ZEUS_API_BASE?: string }).ZEUS_API_BASE;
+    if (typeof globalConfig === 'string' && globalConfig.trim()) {
+      return this.normalizeApiEndpoint(globalConfig);
+    }
+
+    if (typeof document !== 'undefined') {
+      const metaValue = document
+        .querySelector('meta[name="zeus-api-base"]')
+        ?.getAttribute('content');
+      if (metaValue && metaValue.trim()) {
+        return this.normalizeApiEndpoint(metaValue);
+      }
+    }
+
+    return null;
+  }
+
+  private normalizeApiEndpoint(value: string): string {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return '/api/videos';
+    }
+
+    const hasProtocol = trimmed.startsWith('http://') || trimmed.startsWith('https://');
+    const url = hasProtocol ? trimmed : `${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+    if (url.endsWith('/videos')) {
+      return url;
+    }
+
+    const normalized = url.endsWith('/') ? url.slice(0, -1) : url;
+    return `${normalized}/videos`;
   }
 
   private resetUploadForm(): void {
