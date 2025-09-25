@@ -37,8 +37,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
+  "maximumWarning": "200kb",
+                  "maximumError": "400kb"
                 }
               ],
               "outputHashing": "all"
@@ -90,8 +90,10 @@
         }
       }
     }
+
   },
   "cli": {
     "analytics": "c7b4a01f-11f0-4d2e-95b7-a5563a436525"
+
   }
 }
