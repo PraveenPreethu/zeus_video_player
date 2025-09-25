@@ -293,8 +293,7 @@ export class AppComponent implements OnInit {
     }
 
     const host = window.location.hostname;
-    const isLocalHost = ['localhost', '127.0.0.1', '0.0.0.0'].includes(host);
-    return isLocalHost ? '/api/videos' : '/.netlify/functions/videos';
+    return this.isLocalEnvironment(host) ? '/api/videos' : '/.netlify/functions/videos';
   }
 
   private readConfiguredApiEndpoint(): string | null {
@@ -333,6 +332,59 @@ export class AppComponent implements OnInit {
 
     const normalized = url.endsWith('/') ? url.slice(0, -1) : url;
     return `${normalized}/videos`;
+  }
+
+  private isLocalEnvironment(hostname: string): boolean {
+    const normalized = hostname.trim().toLowerCase();
+    if (!normalized) {
+      return true;
+    }
+
+    const knownLocalHosts = ['localhost', '127.0.0.1', '0.0.0.0', '[::1]'];
+    if (knownLocalHosts.includes(normalized)) {
+      return true;
+    }
+
+    if (normalized.endsWith('.local')) {
+      return true;
+    }
+
+    return this.isPrivateIPv4(normalized);
+  }
+
+  private isPrivateIPv4(hostname: string): boolean {
+    const ipv4Match = hostname.match(/^(\d{1,3}\.){3}\d{1,3}$/);
+    if (!ipv4Match) {
+      return false;
+    }
+
+    const octets = hostname.split('.').map(Number);
+    if (octets.some((octet) => Number.isNaN(octet) || octet < 0 || octet > 255)) {
+      return false;
+    }
+
+    const [first, second] = octets;
+    if (first === 10) {
+      return true;
+    }
+
+    if (first === 127) {
+      return true;
+    }
+
+    if (first === 192 && second === 168) {
+      return true;
+    }
+
+    if (first === 172 && second >= 16 && second <= 31) {
+      return true;
+    }
+
+    if (first === 169 && second === 254) {
+      return true;
+    }
+
+    return false;
   }
 
   private resetUploadForm(): void {
