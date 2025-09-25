@@ -12,6 +12,7 @@ A single-page Angular experience that showcases a curated video library in a cri
    ```bash
    npm run server
    ```
+
 3. Launch the Angular development server (proxies API + uploads to the local backend) in a separate terminal
    ```bash
    npm start
