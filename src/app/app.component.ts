@@ -35,7 +35,7 @@ interface UploadedVideoRecord {
   standalone: true,
   imports: [CommonModule, FormsModule, HttpClientModule],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
+  styleUrls: ['./app.component.scss'],
 })
 
 export class AppComponent implements OnInit {
@@ -282,4 +282,6 @@ export class AppComponent implements OnInit {
     this.uploadFile = null;
     this.uploadError = '';
   }
+
 }
+
