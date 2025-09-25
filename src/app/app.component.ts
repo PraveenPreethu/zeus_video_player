@@ -14,7 +14,7 @@ interface VideoItem {
 }
 
 interface Folder {
-  name: string;
+ name: string;
   description: string;
   videos: VideoItem[];
 }
@@ -39,7 +39,7 @@ interface UploadedVideoRecord {
 })
 
 export class AppComponent implements OnInit {
-  private readonly apiEndpoint = this.resolveApiEndpoint();
+  private apiEndpoint = '/api/videos';
   private readonly fallbackThumbnail = 'assets/upload-placeholder.svg';
 
   readonly folders: Folder[] = [
@@ -65,24 +65,7 @@ export class AppComponent implements OnInit {
           duration: '3:54',
           src: 'https://samplelib.com/lib/preview/mp4/sample-10s.mp4',
         },
-        {
-          id: 'action-3',
-            title: 'Neon Drift',
-          description: 'Street racers light up the night in a neon-drenched showdown.',
-          thumbnail:
-            'https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=900&q=80',
-          duration: '3:54',
-          src: 'https://samplelib.com/lib/preview/mp4/sample-10s.mp4',
-        },
-        {
-          id: 'life-2',
-          title: 'Gourmet Journeys',
-          description: 'Follow chefs as they celebrate bold flavors and regional dishes.',
-          thumbnail:
-            'https://images.unsplash.com/photo-1526948128573-703ee1aeb6fa?auto=format&fit=crop&w=900&q=80',
-          duration: '5:47',
-          src: 'https://samplelib.com/lib/preview/mp4/sample-30s.mp4',
-        },
+@@ -86,50 +86,54 @@ export class AppComponent implements OnInit {
         {
           id: 'life-3',
           title: 'Mindful Morning',
@@ -108,6 +91,10 @@ export class AppComponent implements OnInit {
   constructor(private readonly http: HttpClient) {}
 
   ngOnInit(): void {
+    if (typeof window !== 'undefined') {
+      this.apiEndpoint = this.resolveApiEndpoint();
+    }
+
     this.loadUploadedVideos();
   }
 
@@ -133,27 +120,7 @@ export class AppComponent implements OnInit {
   }
 
   openUploadModal(): void {
-    this.resetUploadForm();
-    this.showUploadModal = true;
-  }
-
-  closeUploadModal(): void {
-    if (this.uploadInProgress) {
-      return;
-    }
-
-    this.resetUploadForm();
-    this.showUploadModal = false;
-  }
-
-  handleFileSelection(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const fileList = input.files;
-    this.uploadFile = fileList && fileList.length > 0 ? fileList.item(0) : null;
-    if (this.uploadFile) {
-      this.uploadError = '';
-    }
-  }
+@@ -157,51 +161,52 @@ export class AppComponent implements OnInit {
 
   async submitUpload(): Promise<void> {
     if (this.uploadInProgress) {
@@ -179,7 +146,8 @@ export class AppComponent implements OnInit {
         data: base64,
       };
 
-      const response = await firstValueFrom(this.http.post<UploadedVideoRecord>(this.apiEndpoint, payload));
+      const endpoint = this.getApiEndpoint();
+      const response = await firstValueFrom(this.http.post<UploadedVideoRecord>(endpoint, payload));
       if (!response) {
         throw new Error('No response received from server.');
       }
@@ -205,10 +173,7 @@ export class AppComponent implements OnInit {
         this.uploadError = error.message;
       } else {
         this.uploadError = 'Unable to upload video. Please try again later.';
-      }
-    } finally {
-      this.uploadInProgress = false;
-    }
+@@ -212,81 +217,153 @@ export class AppComponent implements OnInit {
   }
 
   private async fileToBase64(file: File): Promise<string> {
@@ -234,7 +199,8 @@ export class AppComponent implements OnInit {
   }
 
   private loadUploadedVideos(): void {
-    this.http.get<UploadedVideoRecord[]>(this.apiEndpoint).subscribe({
+    const endpoint = this.getApiEndpoint();
+    this.http.get<UploadedVideoRecord[]>(endpoint).subscribe({
       next: (videos) => {
         videos.forEach((record) => this.addUploadedVideo(record));
       },
@@ -292,8 +258,26 @@ export class AppComponent implements OnInit {
     }
 
     const host = window.location.hostname;
-    const isLocalHost = ['localhost', '127.0.0.1', '0.0.0.0'].includes(host);
-    return isLocalHost ? '/api/videos' : '/.netlify/functions/videos';
+    return this.isLocalHost(host) ? '/api/videos' : '/.netlify/functions/videos';
+  }
+
+  private getApiEndpoint(): string {
+    if (typeof window === 'undefined') {
+      return this.apiEndpoint;
+    }
+
+    if (
+      !this.apiEndpoint ||
+      (this.apiEndpoint === '/api/videos' && !this.isLocalHost(window.location.hostname))
+    ) {
+      this.apiEndpoint = this.resolveApiEndpoint();
+    }
+
+    return this.apiEndpoint;
+  }
+
+  private isLocalHost(host: string): boolean {
+    return ['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(host) || host.endsWith('.local');
   }
 
   private readConfiguredApiEndpoint(): string | null {
@@ -342,4 +326,3 @@ export class AppComponent implements OnInit {
   }
 
 }
-
