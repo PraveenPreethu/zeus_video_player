@@ -14,7 +14,7 @@ interface VideoItem {
 }
 
 interface Folder {
-  name: string;
+ name: string;
   description: string;
   videos: VideoItem[];
 }
@@ -65,24 +65,7 @@ export class AppComponent implements OnInit {
           duration: '3:54',
           src: 'https://samplelib.com/lib/preview/mp4/sample-10s.mp4',
         },
-        {
-          id: 'action-3',
-            title: 'Neon Drift',
-          description: 'Street racers light up the night in a neon-drenched showdown.',
-          thumbnail:
-            'https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=900&q=80',
-          duration: '3:54',
-          src: 'https://samplelib.com/lib/preview/mp4/sample-10s.mp4',
-        },
-        {
-          id: 'life-2',
-          title: 'Gourmet Journeys',
-          description: 'Follow chefs as they celebrate bold flavors and regional dishes.',
-          thumbnail:
-            'https://images.unsplash.com/photo-1526948128573-703ee1aeb6fa?auto=format&fit=crop&w=900&q=80',
-          duration: '5:47',
-          src: 'https://samplelib.com/lib/preview/mp4/sample-30s.mp4',
-        },
+@@ -86,50 +86,54 @@ export class AppComponent implements OnInit {
         {
           id: 'life-3',
           title: 'Mindful Morning',
@@ -137,27 +120,7 @@ export class AppComponent implements OnInit {
   }
 
   openUploadModal(): void {
-    this.resetUploadForm();
-    this.showUploadModal = true;
-  }
-
-  closeUploadModal(): void {
-    if (this.uploadInProgress) {
-      return;
-    }
-
-    this.resetUploadForm();
-    this.showUploadModal = false;
-  }
-
-  handleFileSelection(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const fileList = input.files;
-    this.uploadFile = fileList && fileList.length > 0 ? fileList.item(0) : null;
-    if (this.uploadFile) {
-      this.uploadError = '';
-    }
-  }
+@@ -157,51 +161,52 @@ export class AppComponent implements OnInit {
 
   async submitUpload(): Promise<void> {
     if (this.uploadInProgress) {
@@ -210,10 +173,7 @@ export class AppComponent implements OnInit {
         this.uploadError = error.message;
       } else {
         this.uploadError = 'Unable to upload video. Please try again later.';
-      }
-    } finally {
-      this.uploadInProgress = false;
-    }
+@@ -212,81 +217,153 @@ export class AppComponent implements OnInit {
   }
 
   private async fileToBase64(file: File): Promise<string> {
@@ -366,4 +326,3 @@ export class AppComponent implements OnInit {
   }
 
 }
-
