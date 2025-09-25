@@ -67,7 +67,12 @@ export class AppComponent implements OnInit {
         },
         {
           id: 'action-3',
-@@ -106,47 +123,215 @@ export class AppComponent {
+            title: 'Neon Drift',
+          description: 'Street racers light up the night in a neon-drenched showdown.',
+          thumbnail:
+            'https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=900&q=80',
+          duration: '3:54',
+          src: 'https://samplelib.com/lib/preview/mp4/sample-10s.mp4',
         },
         {
           id: 'life-2',
