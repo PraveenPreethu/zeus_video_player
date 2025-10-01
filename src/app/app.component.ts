@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient, HttpClientModule, HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 
 interface CloudVideoResponse {
@@ -18,6 +18,11 @@ interface CloudVideoSummary {
   thumbnail: string;
 }
 
+interface RequestPlaybackResponse {
+  playbackUrl: string;
+  expiresAt: string;
+}
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -29,12 +34,21 @@ interface CloudVideoSummary {
 export class AppComponent implements OnInit {
   private readonly cloudLibraryEndpoint =
     'https://zeus-videos-gtcudxfwaaethsa7.southcentralus-01.azurewebsites.net/api/listvideos';
+  private readonly requestPlaybackEndpoint =
+    'https://zeus-videos-gtcudxfwaaethsa7.southcentralus-01.azurewebsites.net/api/RequestPlay';
   private readonly cloudThumbnail =
     'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80';
 
   cloudVideos: CloudVideoSummary[] = [];
   cloudLoadError = '';
   cloudLoading = true;
+
+  playbackState: 'idle' | 'loading' | 'success' | 'error' = 'idle';
+  playbackVideoTitle = '';
+  playbackUrl = '';
+  playbackExpiresAt = '';
+  playbackErrorMessage = '';
+  requestingVideoId: string | null = null;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -106,5 +120,86 @@ export class AppComponent implements OnInit {
     return video.id;
   }
 
+  requestPlayback(video: CloudVideoSummary): void {
+    const passcode = window.prompt(`Enter passcode for "${video.displayName}"`);
+
+    if (passcode === null) {
+      return;
+    }
+
+    const trimmed = passcode.trim();
+
+    if (!trimmed) {
+      this.playbackState = 'error';
+      this.playbackVideoTitle = video.displayName;
+      this.playbackErrorMessage = 'A passcode is required to request playback.';
+      this.playbackUrl = '';
+      this.playbackExpiresAt = '';
+      this.requestingVideoId = null;
+      return;
+    }
+
+    this.playbackState = 'loading';
+    this.playbackVideoTitle = video.displayName;
+    this.playbackUrl = '';
+    this.playbackExpiresAt = '';
+    this.playbackErrorMessage = '';
+    this.requestingVideoId = video.id;
+
+    this.http
+      .post<RequestPlaybackResponse>(this.requestPlaybackEndpoint, {
+        videoId: video.name,
+        passcode: trimmed,
+      })
+      .subscribe({
+        next: (response) => {
+          this.playbackState = 'success';
+          this.playbackUrl = response.playbackUrl;
+          this.playbackExpiresAt = response.expiresAt;
+          this.playbackErrorMessage = '';
+          this.requestingVideoId = null;
+        },
+        error: (error) => {
+          this.playbackState = 'error';
+          this.playbackErrorMessage = this.formatPlaybackError(error);
+          this.playbackUrl = '';
+          this.playbackExpiresAt = '';
+          this.requestingVideoId = null;
+        },
+      });
+  }
+
+  private formatPlaybackError(error: unknown): string {
+    if (error instanceof HttpErrorResponse) {
+      const errorBody = error.error;
+      if (typeof errorBody === 'string' && errorBody.trim()) {
+        return errorBody;
+      }
+
+      if (errorBody && typeof errorBody === 'object') {
+        try {
+          return JSON.stringify(errorBody, null, 2);
+        } catch {
+          return `${error.message} (status ${error.status})`;
+        }
+      }
+
+      if (error.message) {
+        return error.message;
+      }
+
+      return `Request failed with status ${error.status}`;
+    }
+
+    if (typeof error === 'string') {
+      return error;
+    }
+
+    try {
+      return JSON.stringify(error, null, 2);
+    } catch {
+      return 'An unknown error occurred while requesting playback.';
+    }
+  }
 }
 

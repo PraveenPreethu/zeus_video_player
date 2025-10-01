@@ -20,7 +20,15 @@
 
     <ng-container *ngIf="cloudVideos.length; else cloudLibraryState">
       <div class="cloud-cards">
-        <article class="cloud-card" *ngFor="let video of cloudVideos; trackBy: trackCloudVideo">
+        <button
+          type="button"
+          class="cloud-card"
+          *ngFor="let video of cloudVideos; trackBy: trackCloudVideo"
+          (click)="requestPlayback(video)"
+          [disabled]="requestingVideoId === video.id"
+          [attr.aria-busy]="requestingVideoId === video.id ? 'true' : null"
+          [attr.aria-label]="'Request playback for ' + video.displayName"
+        >
           <div class="thumbnail">
             <img [src]="video.thumbnail" [alt]="video.displayName + ' thumbnail'" loading="lazy" />
           </div>
@@ -29,9 +37,42 @@
             <p>{{ video.contentType }}</p>
             <span>{{ video.formattedSize }}</span>
           </div>
-        </article>
+        </button>
       </div>
     </ng-container>
+    <section class="playback-status" *ngIf="playbackState !== 'idle'">
+      <ng-container [ngSwitch]="playbackState">
+        <p *ngSwitchCase="'loading'">Requesting playback for {{ playbackVideoTitle }}…</p>
+
+        <div *ngSwitchCase="'success'" class="playback-success">
+          <h3>Playback ready for {{ playbackVideoTitle }}</h3>
+          <p>
+            The secure link expires at
+            <span>{{ playbackExpiresAt || 'the provided expiration time' }}</span>.
+          </p>
+          <a
+            class="playback-link"
+            [href]="playbackUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open video in a new tab
+          </a>
+          <video
+            *ngIf="playbackUrl"
+            class="playback-video"
+            controls
+            [src]="playbackUrl"
+          ></video>
+        </div>
+
+        <div *ngSwitchCase="'error'" class="playback-error">
+          <h3>Unable to start playback for {{ playbackVideoTitle || 'the selected video' }}</h3>
+          <p>The server responded with:</p>
+          <pre>{{ playbackErrorMessage }}</pre>
+        </div>
+      </ng-container>
+    </section>
   </section>
 </div>
 
