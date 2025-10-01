@@ -46,7 +46,6 @@ export class AppComponent implements OnInit, OnDestroy {
   playbackState: 'idle' | 'loading' | 'success' | 'error' = 'idle';
   playbackVideoTitle = '';
   playbackUrl = '';
-  playbackExpiresAt = '';
   playbackExpiryCountdown = '';
   playbackErrorMessage = '';
   requestingVideoId: string | null = null;
@@ -140,7 +139,6 @@ export class AppComponent implements OnInit, OnDestroy {
       this.playbackVideoTitle = video.displayName;
       this.playbackErrorMessage = 'A passcode is required to request playback.';
       this.playbackUrl = '';
-      this.playbackExpiresAt = '';
       this.requestingVideoId = null;
       return;
     }
@@ -148,7 +146,6 @@ export class AppComponent implements OnInit, OnDestroy {
     this.playbackState = 'loading';
     this.playbackVideoTitle = video.displayName;
     this.playbackUrl = '';
-    this.playbackExpiresAt = '';
     this.playbackExpiryCountdown = '';
     this.playbackErrorMessage = '';
     this.requestingVideoId = video.id;
@@ -163,7 +160,6 @@ export class AppComponent implements OnInit, OnDestroy {
         next: (response) => {
           this.playbackState = 'success';
           this.playbackUrl = response.playbackUrl;
-          this.playbackExpiresAt = response.expiresAt;
           this.playbackErrorMessage = '';
           this.requestingVideoId = null;
           this.startPlaybackCountdown(response.expiresAt);
@@ -172,7 +168,6 @@ export class AppComponent implements OnInit, OnDestroy {
           this.playbackState = 'error';
           this.playbackErrorMessage = this.formatPlaybackError(error);
           this.playbackUrl = '';
-          this.playbackExpiresAt = '';
           this.playbackExpiryCountdown = '';
           this.requestingVideoId = null;
           this.clearPlaybackTimer();

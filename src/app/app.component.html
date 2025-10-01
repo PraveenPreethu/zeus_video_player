@@ -49,10 +49,6 @@
           <p class="playback-countdown" *ngIf="playbackExpiryCountdown">
             Video valid for: <span>{{ playbackExpiryCountdown }}</span>
           </p>
-          <p>
-            The secure link expires at
-            <span>{{ playbackExpiresAt || 'the provided expiration time' }}</span>.
-          </p>
           <a
             class="playback-link"
             [href]="playbackUrl"
