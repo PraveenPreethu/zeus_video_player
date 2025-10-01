@@ -10,6 +10,31 @@
     <button class="cta" type="button" (click)="openUploadModal()">Upload New Video</button>
   </header>
 
+  <section class="cloud-library" aria-label="Cloud video library">
+    <div class="cloud-header">
+      <div>
+        <h2>Cloud Library</h2>
+        <p>Videos available from the Zeus cloud catalog.</p>
+      </div>
+      <span class="cloud-count" *ngIf="cloudVideos.length">{{ cloudVideos.length }} videos</span>
+    </div>
+
+    <ng-container *ngIf="cloudVideos.length; else cloudLibraryState">
+      <div class="cloud-cards">
+        <article class="cloud-card" *ngFor="let video of cloudVideos; trackBy: trackCloudVideo">
+          <div class="thumbnail">
+            <img [src]="video.thumbnail" [alt]="video.displayName + ' thumbnail'" loading="lazy" />
+          </div>
+          <div class="cloud-info">
+            <h3>{{ video.displayName }}</h3>
+            <p>{{ video.contentType }}</p>
+            <span>{{ video.formattedSize }}</span>
+          </div>
+        </article>
+      </div>
+    </ng-container>
+  </section>
+
   <section class="hero">
     <div>
       <h2>{{ selectedFolder.name }}</h2>
@@ -64,6 +89,19 @@
   <div class="empty-state">
     <h3>No videos yet</h3>
     <p>Upload your first video to start building this collection.</p>
+  </div>
+</ng-template>
+
+<ng-template #cloudLibraryState>
+  <div class="cloud-state" *ngIf="cloudLoadError; else cloudStatusNeutral">
+    <p>{{ cloudLoadError }}</p>
+  </div>
+</ng-template>
+
+<ng-template #cloudStatusNeutral>
+  <div class="cloud-state">
+    <p *ngIf="cloudLoading">Loading cloud videos…</p>
+    <p *ngIf="!cloudLoading">No videos found in the cloud library.</p>
   </div>
 </ng-template>
 
