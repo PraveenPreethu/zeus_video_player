@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule, HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 
 interface CloudVideoResponse {
   Name: string;
@@ -31,7 +31,7 @@ interface RequestPlaybackResponse {
   styleUrls: ['./app.component.scss'],
 })
 
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   private readonly cloudLibraryEndpoint =
     'https://zeus-videos-gtcudxfwaaethsa7.southcentralus-01.azurewebsites.net/api/listvideos';
   private readonly requestPlaybackEndpoint =
@@ -47,13 +47,19 @@ export class AppComponent implements OnInit {
   playbackVideoTitle = '';
   playbackUrl = '';
   playbackExpiresAt = '';
+  playbackExpiryCountdown = '';
   playbackErrorMessage = '';
   requestingVideoId: string | null = null;
+  private playbackTimerId: number | null = null;
 
   constructor(private readonly http: HttpClient) {}
 
   ngOnInit(): void {
     this.loadCloudVideos();
+  }
+
+  ngOnDestroy(): void {
+    this.clearPlaybackTimer();
   }
 
   private loadCloudVideos(): void {
@@ -143,8 +149,10 @@ export class AppComponent implements OnInit {
     this.playbackVideoTitle = video.displayName;
     this.playbackUrl = '';
     this.playbackExpiresAt = '';
+    this.playbackExpiryCountdown = '';
     this.playbackErrorMessage = '';
     this.requestingVideoId = video.id;
+    this.clearPlaybackTimer();
 
     this.http
       .post<RequestPlaybackResponse>(this.requestPlaybackEndpoint, {
@@ -158,13 +166,16 @@ export class AppComponent implements OnInit {
           this.playbackExpiresAt = response.expiresAt;
           this.playbackErrorMessage = '';
           this.requestingVideoId = null;
+          this.startPlaybackCountdown(response.expiresAt);
         },
         error: (error) => {
           this.playbackState = 'error';
           this.playbackErrorMessage = this.formatPlaybackError(error);
           this.playbackUrl = '';
           this.playbackExpiresAt = '';
+          this.playbackExpiryCountdown = '';
           this.requestingVideoId = null;
+          this.clearPlaybackTimer();
         },
       });
   }
@@ -172,16 +183,9 @@ export class AppComponent implements OnInit {
   private formatPlaybackError(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       const errorBody = error.error;
-      if (typeof errorBody === 'string' && errorBody.trim()) {
-        return errorBody;
-      }
-
-      if (errorBody && typeof errorBody === 'object') {
-        try {
-          return JSON.stringify(errorBody, null, 2);
-        } catch {
-          return `${error.message} (status ${error.status})`;
-        }
+      const extractedMessage = this.extractErrorMessage(errorBody);
+      if (extractedMessage) {
+        return extractedMessage;
       }
 
       if (error.message) {
@@ -195,11 +199,82 @@ export class AppComponent implements OnInit {
       return error;
     }
 
-    try {
-      return JSON.stringify(error, null, 2);
-    } catch {
-      return 'An unknown error occurred while requesting playback.';
+    return 'An unknown error occurred while requesting playback.';
+  }
+
+  private extractErrorMessage(errorBody: unknown): string | null {
+    if (typeof errorBody === 'string') {
+      const trimmed = errorBody.trim();
+      return trimmed || null;
     }
+
+    if (!errorBody || typeof errorBody !== 'object') {
+      return null;
+    }
+
+    const possibleKeys = ['message', 'error', 'errorMessage', 'detail', 'title'];
+    for (const key of possibleKeys) {
+      const value = (errorBody as Record<string, unknown>)[key];
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+    }
+
+    for (const value of Object.values(errorBody as Record<string, unknown>)) {
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+    }
+
+    return null;
+  }
+
+  private startPlaybackCountdown(expiresAt: string): void {
+    this.clearPlaybackTimer();
+    this.updatePlaybackCountdown(expiresAt);
+
+    this.playbackTimerId = window.setInterval(() => {
+      this.updatePlaybackCountdown(expiresAt);
+    }, 1000);
+  }
+
+  private updatePlaybackCountdown(expiresAt: string): void {
+    const expiryTime = new Date(expiresAt).getTime();
+
+    if (!Number.isFinite(expiryTime)) {
+      this.playbackExpiryCountdown = '';
+      this.clearPlaybackTimer();
+      return;
+    }
+
+    const remainingSeconds = Math.max(0, Math.floor((expiryTime - Date.now()) / 1000));
+
+    if (remainingSeconds <= 0) {
+      this.playbackExpiryCountdown = 'Expired';
+      this.clearPlaybackTimer();
+      return;
+    }
+
+    const hours = Math.floor(remainingSeconds / 3600);
+    const minutes = Math.floor((remainingSeconds % 3600) / 60);
+    const seconds = remainingSeconds % 60;
+
+    if (hours > 0) {
+      this.playbackExpiryCountdown = `${this.pad(hours)}:${this.pad(minutes)}:${this.pad(seconds)}`;
+    } else {
+      this.playbackExpiryCountdown = `${this.pad(minutes)}:${this.pad(seconds)}`;
+    }
+  }
+
+  private clearPlaybackTimer(): void {
+    if (this.playbackTimerId !== null) {
+      window.clearInterval(this.playbackTimerId);
+      this.playbackTimerId = null;
+    }
+  }
+
+  private pad(value: number): string {
+    return value.toString().padStart(2, '0');
   }
 }
 

@@ -46,6 +46,9 @@
 
         <div *ngSwitchCase="'success'" class="playback-success">
           <h3>Playback ready for {{ playbackVideoTitle }}</h3>
+          <p class="playback-countdown" *ngIf="playbackExpiryCountdown">
+            Video valid for: <span>{{ playbackExpiryCountdown }}</span>
+          </p>
           <p>
             The secure link expires at
             <span>{{ playbackExpiresAt || 'the provided expiration time' }}</span>.
@@ -68,8 +71,7 @@
 
         <div *ngSwitchCase="'error'" class="playback-error">
           <h3>Unable to start playback for {{ playbackVideoTitle || 'the selected video' }}</h3>
-          <p>The server responded with:</p>
-          <pre>{{ playbackErrorMessage }}</pre>
+          <p class="playback-error-message">{{ playbackErrorMessage }}</p>
         </div>
       </ng-container>
     </section>
