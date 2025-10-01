@@ -195,6 +195,21 @@
   margin: 0;
 }
 
+.playback-countdown {
+  font-weight: 600;
+  color: var(--zeus-red);
+  background: rgba(229, 57, 53, 0.12);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+.playback-countdown span {
+  font-variant-numeric: tabular-nums;
+}
+
 .playback-link {
   align-self: flex-start;
   background: var(--zeus-red);
@@ -210,6 +225,15 @@
 .playback-link:focus-visible {
   background: #c62828;
   transform: translateY(-1px);
+}
+
+.playback-error-message {
+  margin-top: 8px;
+  background: rgba(229, 57, 53, 0.12);
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 500;
+  color: #7f1d1d;
 }
 
 .playback-video {
