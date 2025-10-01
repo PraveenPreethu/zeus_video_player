@@ -14,10 +14,10 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render the default folder title', () => {
+  it('should render the application title', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.hero h2')?.textContent).toContain('Action Highlights');
+    expect(compiled.querySelector('.app-header h1')?.textContent).toContain('Zeus Video Library');
   });
 });
