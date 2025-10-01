@@ -48,20 +48,24 @@
           <p class="playback-countdown" *ngIf="playbackExpiryCountdown">
             Video valid for: <span>{{ playbackExpiryCountdown }}</span>
           </p>
-          <a
-            class="playback-link"
-            [href]="playbackUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open video in a new tab
-          </a>
-          <video
-            *ngIf="playbackUrl"
-            class="playback-video"
-            controls
-            [src]="playbackUrl"
-          ></video>
+          <div class="playback-actions">
+            <button
+              type="button"
+              class="playback-open-button"
+              (click)="openPlaybackModal()"
+              [disabled]="!playbackUrl"
+            >
+              Watch in fullscreen player
+            </button>
+            <a
+              class="playback-link"
+              [href]="playbackUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open video in a new tab
+            </a>
+          </div>
         </div>
 
         <div *ngSwitchCase="'error'" class="playback-error">
@@ -85,3 +89,28 @@
     <p *ngIf="!cloudLoading">No videos found in the cloud library.</p>
   </div>
 </ng-template>
+
+<div
+  *ngIf="isPlaybackModalOpen && playbackUrl"
+  class="playback-overlay"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="'Video player for ' + playbackVideoTitle"
+>
+  <div class="playback-overlay__content">
+    <button
+      type="button"
+      class="playback-overlay__close"
+      (click)="closePlaybackModal(overlayVideo)"
+    >
+      Close video
+    </button>
+    <video
+      #overlayVideo
+      class="playback-overlay__video"
+      controls
+      autoplay
+      [src]="playbackUrl"
+    ></video>
+  </div>
+</div>

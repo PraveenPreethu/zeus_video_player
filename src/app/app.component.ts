@@ -48,6 +48,7 @@ export class AppComponent implements OnInit, OnDestroy {
   playbackUrl = '';
   playbackExpiryCountdown = '';
   playbackErrorMessage = '';
+  isPlaybackModalOpen = false;
   requestingVideoId: string | null = null;
   private playbackTimerId: number | null = null;
 
@@ -59,6 +60,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearPlaybackTimer();
+    this.setBodyScrollLocked(false);
   }
 
   private loadCloudVideos(): void {
@@ -139,6 +141,7 @@ export class AppComponent implements OnInit, OnDestroy {
       this.playbackVideoTitle = video.displayName;
       this.playbackErrorMessage = 'A passcode is required to request playback.';
       this.playbackUrl = '';
+      this.closePlaybackModal();
       this.requestingVideoId = null;
       return;
     }
@@ -148,6 +151,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.playbackUrl = '';
     this.playbackExpiryCountdown = '';
     this.playbackErrorMessage = '';
+    this.closePlaybackModal();
     this.requestingVideoId = video.id;
     this.clearPlaybackTimer();
 
@@ -162,6 +166,7 @@ export class AppComponent implements OnInit, OnDestroy {
           this.playbackUrl = response.playbackUrl;
           this.playbackErrorMessage = '';
           this.requestingVideoId = null;
+          this.openPlaybackModal();
           this.startPlaybackCountdown(response.expiresAt);
         },
         error: (error) => {
@@ -169,6 +174,7 @@ export class AppComponent implements OnInit, OnDestroy {
           this.playbackErrorMessage = this.formatPlaybackError(error);
           this.playbackUrl = '';
           this.playbackExpiryCountdown = '';
+          this.closePlaybackModal();
           this.requestingVideoId = null;
           this.clearPlaybackTimer();
         },
@@ -270,6 +276,32 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private pad(value: number): string {
     return value.toString().padStart(2, '0');
+  }
+
+  openPlaybackModal(): void {
+    if (!this.playbackUrl) {
+      return;
+    }
+
+    this.isPlaybackModalOpen = true;
+    this.setBodyScrollLocked(true);
+  }
+
+  closePlaybackModal(videoElement?: HTMLVideoElement | null): void {
+    if (videoElement) {
+      videoElement.pause();
+    }
+
+    this.isPlaybackModalOpen = false;
+    this.setBodyScrollLocked(false);
+  }
+
+  private setBodyScrollLocked(locked: boolean): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    document.body.style.overflow = locked ? 'hidden' : '';
   }
 }
 

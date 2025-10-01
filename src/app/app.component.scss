@@ -227,6 +227,37 @@
   transform: translateY(-1px);
 }
 
+.playback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.playback-open-button {
+  background: white;
+  color: var(--zeus-red);
+  border: 2px solid var(--zeus-red);
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.playback-open-button:hover:not(:disabled),
+.playback-open-button:focus-visible:not(:disabled) {
+  background: var(--zeus-red);
+  color: white;
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.playback-open-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .playback-error-message {
   margin-top: 8px;
   background: rgba(229, 57, 53, 0.12);
@@ -234,12 +265,6 @@
   border-radius: 12px;
   font-weight: 500;
   color: #7f1d1d;
-}
-
-.playback-video {
-  width: 100%;
-  border-radius: 16px;
-  box-shadow: 0 10px 24px rgba(229, 57, 53, 0.25);
 }
 
 .playback-error pre {
@@ -271,5 +296,71 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+.playback-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+}
+
+.playback-overlay__content {
+  width: min(1200px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.playback-overlay__close {
+  align-self: flex-end;
+  background: rgba(15, 15, 15, 0.7);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.playback-overlay__close:hover,
+.playback-overlay__close:focus-visible {
+  background: rgba(15, 15, 15, 0.9);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.playback-overlay__video {
+  width: 100%;
+  max-height: calc(100vh - 160px);
+  border-radius: 20px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+  background: black;
+}
+
+@media (max-width: 640px) {
+  .playback-overlay {
+    padding: 16px;
+  }
+
+  .playback-overlay__content {
+    gap: 12px;
+  }
+
+  .playback-overlay__close {
+    align-self: stretch;
+    text-align: center;
+  }
+
+  .playback-overlay__video {
+    max-height: calc(100vh - 120px);
   }
 }
